@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contractor Escrow – Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-storage-compat.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white border-b">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-xl font-bold text-gray-900">Contractor Escrow</h1>
+        <p id="user-info" class="text-sm text-gray-500"></p>
+      </div>
+      <button id="logout-btn"
+              class="text-sm text-red-600 hover:text-red-800 font-medium">
+        Sign Out
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Create Job Section -->
+    <section id="create-job-section" class="mb-10 hidden">
+      <div class="bg-white rounded-xl shadow-sm border p-6">
+        <h2 class="text-lg font-semibold mb-4">Create New Job Contract</h2>
+        <form id="create-job-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Recipient Unique ID (5-character code)</label>
+            <input type="text" id="job-recipient-code" required maxlength="5"
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 uppercase outline-none font-mono"
+                   placeholder="e.g. A4F9X" />
+            <p class="text-xs text-gray-400 mt-1">Enter the 5-character ID of the client or contractor you are contracting with.</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Job Title / Description</label>
+            <textarea id="job-description" rows="3" required
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="e.g. Install new electrical panel and rewire kitchen"></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+              <input type="number" id="job-amount" min="1" step="0.01" required
+                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+              <select id="job-currency" required
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit"
+                  class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition">
+            Create & Send Contract
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Jobs List -->
+    <section class="mb-10">
+      <h2 class="text-lg font-semibold mb-4">Your Jobs</h2>
+      <div id="jobs-list" class="space-y-4">
+        <p class="text-gray-500">Loading jobs...</p>
+      </div>
+    </section>
+
+    <!-- Cloudflare Worker Connection Test -->
+    <section>
+      <div class="bg-white rounded-xl shadow-sm border p-6 flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900">Cloudflare Worker Link</h2>
+          <p id="worker-status-msg" class="text-sm text-gray-500 mt-1">Test connection to your deployed worker backend.</p>
+        </div>
+        <button id="test-worker-btn"
+                class="bg-gray-900 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-800 transition">
+          Test Worker Connection
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Dispute Modal Popup -->
+  <div id="dispute-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-6 mx-4 max-h-[90vh] overflow-y-auto">
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">Raise Dispute</h3>
+      <p class="text-sm text-gray-500 mb-4">Please provide a detailed explanation of the issue so our specialists can review it.</p>
+      <textarea id="dispute-reason-input" rows="4"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-4 text-sm"
+                placeholder="Describe the issue or reason for dispute..."></textarea>
+      
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Attach Photos / Videos (Optional)</label>
+        <input type="file" id="dispute-files" multiple accept="image/*,video/*"
+               class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+        <p class="text-xs text-gray-400 mt-1">You can select multiple image or video files.</p>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button type="button" onclick="closeDisputeModal()"
+                class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 font-medium">
+          Cancel
+        </button>
+        <button type="button" onclick="submitDispute()"
+                class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 font-medium">
+          Submit Dispute
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading / Blocking Overlay -->
+  <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-xl p-8 max-w-sm w-full mx-4 text-center space-y-4">
+      <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto"></div>
+      <p class="text-sm font-medium text-gray-900 leading-relaxed">
+        We're submitting your request, please hang on for a few seconds. 
+        <span class="text-red-600 font-bold block mt-1">Do NOT close the window</span>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyChaJ8V0RulhBVu7EYZq9Kh6mswAIADADw",
+      authDomain: "dolaz-9e25e.firebaseapp.com",
+      projectId: "dolaz-9e25e",
+      storageBucket: "dolaz-9e25e.firebasestorage.app",
+      messagingSenderId: "213063237801",
+      appId: "1:213063237801:web:10134ff68f17229362a9b8"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    let currentUser = null;
+    let userProfile = null;
+    let activeDisputeJobId = null;
+    let isSubmitting = false;
+    const expandedJobIds = new Set();
+
+    // Prevent accidental window closure during submission
+    window.addEventListener('beforeunload', (e) => {
+      if (isSubmitting) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
+    // ========== AUTH GUARD ==========
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+      currentUser = user;
+
+      const doc = await db.collection('users').doc(user.uid).get();
+      userProfile = doc.data();
+
+      document.getElementById('user-info').textContent =
+        `${userProfile.name} (${userProfile.role}) · ID: ${userProfile.code}`;
+
+      document.getElementById('create-job-section').classList.remove('hidden');
+      loadJobs();
+    });
+
+    // ========== LOGOUT ==========
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      auth.signOut().then(() => {
+        window.location.href = 'index.html';
+      });
+    });
+
+    // ========== WORKER CONNECTION TEST ==========
+    document.getElementById('test-worker-btn').addEventListener('click', async () => {
+      const statusMsg = document.getElementById('worker-status-msg');
+      statusMsg.textContent = 'Proposing mock job (Bob & Mike - $45 tree cutting) on-chain...';
+      statusMsg.className = 'text-sm text-blue-600 font-medium mt-1';
+    
+      try {
+        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+    
+        const response = await fetch(workerUrl, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+    
+        const data = await response.json();
+        
+        if (response.ok && data.txHash) {
+          statusMsg.innerHTML = `Job Proposed On-Chain! TX: <a href="https://sepolia.basescan.org/tx/${data.txHash}" target="_blank" class="underline font-mono">${data.txHash.substring(0, 10)}...</a>`;
+          statusMsg.className = 'text-sm text-green-600 font-medium mt-1';
+        } else {
+          statusMsg.textContent = data.message || 'Transaction error.';
+          statusMsg.className = 'text-sm text-red-600 font-medium mt-1';
+        }
+      } catch (err) {
+        statusMsg.textContent = 'Connection failed: ' + err.message;
+        statusMsg.className = 'text-sm text-red-600 font-medium mt-1';
+      }
+    });
+
+    // ========== AUDIT LOGGER HELPER ==========
+    async function logAuditAction(jobId, action, details = '') {
+      try {
+        await db.collection('jobs').doc(jobId).collection('auditLogs').add({
+          action: action,
+          details: details,
+          userId: currentUser.uid,
+          userName: userProfile.name,
+          userRole: userProfile.role,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (err) {
+        console.error('Error writing audit log:', err);
+      }
+    }
+
+// ========== CREATE JOB WITH RECIPIENT LOOKUP & ON-CHAIN PROPOSAL ==========
+    document.getElementById('create-job-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const recipientCode = document.getElementById('job-recipient-code').value.trim().toUpperCase();
+      const description = document.getElementById('job-description').value;
+      const amount = parseFloat(document.getElementById('job-amount').value);
+      const currency = document.getElementById('job-currency').value;
+
+      if (recipientCode === userProfile.code) {
+        alert('You cannot create a contract with yourself.');
+        return;
+      }
+
+      isSubmitting = true;
+      document.getElementById('loading-overlay').classList.remove('hidden');
+
+      try {
+        const userQuery = await db.collection('users').where('code', '==', recipientCode).get();
+        
+        if (userQuery.empty) {
+          throw new Error('Recipient ID not found. Please check the code and try again.');
+        }
+
+        const recipientDoc = userQuery.docs[0];
+        const recipientId = recipientDoc.id;
+        const recipientData = recipientDoc.data();
+
+        let clientId, clientName, contractorId, contractorName, clientCode, contractorCode;
+
+        if (userProfile.role === 'client') {
+          clientId = currentUser.uid;
+          clientName = userProfile.name;
+          contractorId = recipientId;
+          contractorName = recipientData.name;
+          clientCode = userProfile.code;
+          contractorCode = recipientData.code;
+        } else {
+          clientId = recipientId;
+          clientName = recipientData.name;
+          contractorId = currentUser.uid;
+          contractorName = userProfile.name;
+          clientCode = recipientData.code;
+          contractorCode = userProfile.code;
+        }
+
+        const jobId = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32)))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+
+        // Single call to Cloudflare Worker handles BOTH blockchain proposal & Firestore sync atomically
+        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerRes = await fetch(workerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jobId,
+            amount,
+            currency,
+            description,
+            clientCode,
+            contractorCode,
+            clientId,
+            clientName,
+            contractorId,
+            contractorName,
+            createdBy: currentUser.uid
+          })
+        });
+
+        const workerData = await workerRes.json();
+        if (!workerRes.ok || !workerData.success) {
+          throw new Error(workerData.message || 'Contract creation failed');
+        }
+
+        await logAuditAction(jobId, 'CONTRACT_CREATED', `Contract proposed on-chain for ${amount} ${currency}. TX: ${workerData.txHash}`);
+
+        document.getElementById('create-job-form').reset();
+        loadJobs();
+        alert('Contract created successfully!');
+
+      } catch (err) {
+        alert('Error creating job: ' + err.message);
+      } finally {
+        isSubmitting = false;
+        document.getElementById('loading-overlay').classList.add('hidden');
+      }
+    });
+
+    // ========== TOGGLE JOB EXPANSION & TIMELINE ==========
+    async function toggleJobExpansion(jobId, cardElement) {
+      const timelineDiv = cardElement.querySelector(`#timeline-${jobId}`);
+      const arrowSpan = cardElement.querySelector('.arrow-indicator');
+      if (!timelineDiv) return;
+
+      if (expandedJobIds.has(jobId)) {
+        expandedJobIds.delete(jobId);
+        timelineDiv.classList.add('hidden');
+        if (arrowSpan) arrowSpan.classList.remove('rotate-180');
+      } else {
+        expandedJobIds.add(jobId);
+        timelineDiv.classList.remove('hidden');
+        if (arrowSpan) arrowSpan.classList.add('rotate-180');
+        await loadTimelineLogs(jobId, timelineDiv);
+      }
+    }
+
+    async function loadTimelineLogs(jobId, container) {
+      container.innerHTML = '<p class="text-xs text-gray-400">Loading timeline...</p>';
+      try {
+        const [logsSnapshot, jobDoc] = await Promise.all([
+          db.collection('jobs').doc(jobId).collection('auditLogs').orderBy('timestamp', 'asc').get(),
+          db.collection('jobs').doc(jobId).get()
+        ]);
+
+        const jobData = jobDoc.data() || {};
+        const attachments = jobData.disputeAttachments || [];
+
+        if (logsSnapshot.empty) {
+          container.innerHTML = '<p class="text-xs text-gray-400">No activity recorded yet.</p>';
+          return;
+        }
+
+        let html = '<h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Audit Timeline</h4>';
+        html += '<div class="space-y-3 border-l-2 border-blue-100 pl-3 ml-1">';
+
+        logsSnapshot.forEach(doc => {
+          const log = doc.data();
+          const timeStr = log.timestamp?.toDate() ? log.timestamp.toDate().toLocaleString() : 'Just now';
+          html += `
+            <div class="relative">
+              <div class="absolute -left-[17px] top-1 w-2.5 h-2.5 rounded-full bg-blue-500 border-2 border-white"></div>
+              <p class="text-xs font-medium text-gray-800">${log.action.replace(/_/g, ' ')} <span class="text-gray-400 font-normal">by ${log.userName || 'Unknown'} (${log.userRole || ''})</span></p>
+              ${log.details ? `<p class="text-xs text-gray-500 mt-0.5">${log.details}</p>` : ''}
+              <p class="text-[10px] text-gray-400 mt-0.5">${timeStr}</p>
+            </div>
+          `;
+        });
+
+        if (attachments.length > 0) {
+          html += `
+            <div class="mt-4 pt-3 border-t border-gray-100">
+              <p class="text-xs font-semibold text-gray-700 mb-2">Dispute Attachments (${attachments.length}):</p>
+              <div class="grid grid-cols-3 gap-2">
+          `;
+          attachments.forEach(att => {
+            if (att.contentType && att.contentType.startsWith('video/')) {
+              html += `
+                <div class="relative bg-black rounded-lg overflow-hidden aspect-video">
+                  <video src="${att.url}" controls class="w-full h-full object-cover"></video>
+                </div>
+              `;
+            } else {
+              html += `
+                <a href="${att.url}" target="_blank" class="block rounded-lg overflow-hidden border border-gray-200 bg-gray-50 hover:opacity-90 aspect-square">
+                  <img src="${att.url}" alt="${att.name}" class="w-full h-full object-cover" />
+                </a>
+              `;
+            }
+          });
+          html += `</div></div>`;
+        }
+
+        html += '</div>';
+        container.innerHTML = html;
+      } catch (err) {
+        console.error('Error loading timeline:', err);
+        container.innerHTML = '<p class="text-xs text-red-500">Failed to load timeline.</p>';
+      }
+    }
+
+    // ========== LOAD JOBS ==========
+    async function loadJobs() {
+      const jobsList = document.getElementById('jobs-list');
+      jobsList.innerHTML = '<p class="text-gray-500">Loading jobs...</p>';
+    
+      try {
+        const clientJobs = await db.collection('jobs')
+          .where('clientId', '==', currentUser.uid)
+          .get();
+
+        const contractorJobs = await db.collection('jobs')
+          .where('contractorId', '==', currentUser.uid)
+          .get();
+    
+        const jobsMap = new Map();
+        clientJobs.forEach(doc => jobsMap.set(doc.id, doc));
+        contractorJobs.forEach(doc => jobsMap.set(doc.id, doc));
+        
+        const docs = Array.from(jobsMap.values());
+        
+        docs.sort((a, b) => {
+          const timeA = a.data().createdAt?.toMillis() || 0;
+          const timeB = b.data().createdAt?.toMillis() || 0;
+          return timeB - timeA;
+        });
+
+        if (docs.length === 0) {
+          jobsList.innerHTML = '<p class="text-gray-500">No jobs yet.</p>';
+          return;
+        }
+    
+        jobsList.innerHTML = '';
+    
+        docs.forEach(doc => {
+          const job = doc.data();
+          const jobId = doc.id;
+          const isExpanded = expandedJobIds.has(jobId);
+    
+          const card = document.createElement('div');
+          card.className = 'bg-white rounded-xl shadow-sm border p-5 cursor-pointer hover:border-gray-300 transition';
+          
+          card.onclick = (e) => {
+            if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('textarea') || e.target.closest('video')) return;
+            toggleJobExpansion(jobId, card);
+          };
+    
+          card.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-medium text-gray-900">${job.description.substring(0, 80)}${job.description.length > 80 ? '...' : ''}</h3>
+                <p class="text-sm text-gray-500 mt-1">
+                  ${job.amount} ${job.currency} · 
+                  <span class="capitalize font-medium">${job.status.replace('_', ' ')}</span>
+                </p>
+                <p class="text-xs text-gray-400 mt-1">Client: ${job.clientName} · Contractor: ${job.contractorName || 'Pending Assignment'}</p>
+              </div>
+              <div class="text-right text-sm text-gray-400 flex items-center gap-2">
+                <span>${job.createdAt?.toDate().toLocaleDateString() || ''}</span>
+                <span class="arrow-indicator text-xs text-gray-400 transform transition-transform ${isExpanded ? 'rotate-180' : ''}">▼</span>
+              </div>
+            </div>
+    
+            <div class="mt-4 flex gap-2 flex-wrap">
+              ${renderActionButtons(job, jobId)}
+            </div>
+
+            <div id="timeline-${jobId}" class="mt-4 pt-4 border-t border-gray-100 ${isExpanded ? '' : 'hidden'}">
+              ${isExpanded ? '<p class="text-xs text-gray-400">Loading timeline...</p>' : ''}
+            </div>
+          `;
+    
+          jobsList.appendChild(card);
+
+          if (isExpanded) {
+            loadTimelineLogs(jobId, card.querySelector(`#timeline-${jobId}`));
+          }
+        });
+    
+      } catch (err) {
+        console.error('Error loading jobs:', err);
+        jobsList.innerHTML = `
+          <div class="bg-red-50 text-red-700 p-4 rounded-lg">
+            <p class="font-medium">Error loading jobs</p>
+            <p class="text-sm mt-1">${err.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderActionButtons(job, jobId) {
+      const role = userProfile.role;
+      const isParticipant = (job.clientId === currentUser.uid || job.contractorId === currentUser.uid);
+      if (!isParticipant) return `<span class="text-sm text-gray-400">No actions available</span>`;
+
+      // If disputed, contract is locked
+      if (job.status === 'disputed') {
+        return `<span class="text-sm text-amber-600 font-medium">Dispute under review (Locked)</span>`;
+      }
+
+      // Proposed status
+      if (job.status === 'proposed') {
+        let buttons = '';
+        const isCreator = job.createdBy ? job.createdBy === currentUser.uid : true;
+
+        if (isCreator) {
+          buttons += `<button onclick="voidJob('${jobId}')" class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300">Void Contract</button>`;
+        } else {
+          buttons += `
+            <button onclick="acceptJob('${jobId}')" class="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">Accept Contract</button>
+            <button onclick="rejectJob('${jobId}')" class="px-4 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">Reject Contract</button>
+          `;
+        }
+
+        return buttons || `<span class="text-sm text-gray-400">Waiting for other party</span>`;
+      }
+
+      // Accepted status (Live but NOT funded yet)
+      if (job.status === 'accepted') {
+        let buttons = '';
+        if (job.clientId === currentUser.uid) {
+          buttons += `<button onclick="fundJob('${jobId}')" class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">Fund Job</button>`;
+        }
+        buttons += `<button onclick="requestVoid('${jobId}')" class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300">Void</button>`;
+        return buttons;
+      }
+
+      // Funded status (Live and funded)
+      if (job.status === 'funded') {
+        let buttons = `
+          <button onclick="requestCompletion('${jobId}')" class="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">Mark as Complete</button>
+          <button onclick="raiseDispute('${jobId}')" class="px-4 py-1.5 bg-red-100 text-red-700 text-sm rounded-lg hover:bg-red-200">Raise Dispute</button>
+          <button onclick="requestVoid('${jobId}')" class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300">Void</button>
+        `;
+        return buttons;
+      }
+
+      // Completion Requested (Waiting for other party validation)
+      if (job.status === 'completion_requested') {
+        if (job.completionRequestedBy === currentUser.uid) {
+          return `
+            <span class="text-sm text-amber-600 font-medium">Completion requested. Waiting for other party approval.</span>
+          `;
+        } else {
+          return `
+            <button onclick="approveComplete('${jobId}')" class="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">Approve Completion</button>
+            <button onclick="raiseDispute('${jobId}')" class="px-4 py-1.5 bg-red-100 text-red-700 text-sm rounded-lg hover:bg-red-200">Raise Dispute</button>
+          `;
+        }
+      }
+
+      // Void Requested (Waiting for other party validation)
+      if (job.status === 'void_requested') {
+        if (job.voidRequestedBy === currentUser.uid) {
+          return `
+            <button onclick="cancelVoidRequest('${jobId}')" class="px-4 py-1.5 bg-gray-300 text-gray-800 text-sm rounded-lg hover:bg-gray-400 font-medium">Un-Void Request</button>
+            <span class="text-sm text-amber-600 font-medium">Void requested. Waiting for other party approval.</span>
+            <button onclick="raiseDispute('${jobId}')" class="px-4 py-1.5 bg-red-100 text-red-700 text-sm rounded-lg hover:bg-red-200">Raise Dispute</button>
+          `;
+        } else {
+          return `
+            <button onclick="approveVoid('${jobId}')" class="px-4 py-1.5 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700">Approve Void</button>
+            <button onclick="raiseDispute('${jobId}')" class="px-4 py-1.5 bg-red-100 text-red-700 text-sm rounded-lg hover:bg-red-200">Raise Dispute</button>
+          `;
+        }
+      }
+
+      if (['completed', 'released'].includes(job.status)) {
+        return `<span class="text-sm text-green-600 font-medium">Funds Released Successfully</span>`;
+      }
+
+      if (job.status === 'voided') {
+        return `<span class="text-sm text-gray-400 font-medium">Contract Voided</span>`;
+      }
+
+      if (job.status === 'rejected') {
+        return `<span class="text-sm text-red-500 font-medium">Contract Rejected</span>`;
+      }
+
+      return `<span class="text-sm text-gray-400">No actions available</span>`;
+    }
+
+    // ========== ACTION HANDLERS WITH AUDIT LOGGING ==========
+    window.acceptJob = async (jobId) => {
+      await db.collection('jobs').doc(jobId).update({
+        status: 'accepted',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await logAuditAction(jobId, 'CONTRACT_ACCEPTED', 'Contract accepted by recipient');
+      loadJobs();
+    };
+
+    window.rejectJob = async (jobId) => {
+      if (!confirm('Are you sure you want to reject this contract?')) return;
+      await db.collection('jobs').doc(jobId).update({
+        status: 'rejected',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await logAuditAction(jobId, 'CONTRACT_REJECTED', 'Contract rejected by recipient');
+      loadJobs();
+    };
+
+    window.fundJob = async (jobId) => {
+      if (!confirm('Proceed to fund this contract? This will record the escrow deposit on Base Sepolia.')) return;
+
+      isSubmitting = true;
+      document.getElementById('loading-overlay').classList.remove('hidden');
+
+      try {
+        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerRes = await fetch(workerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'fundJob',
+            jobId: jobId
+          })
+        });
+
+        const workerData = await workerRes.json();
+        if (!workerRes.ok || !workerData.success) {
+          throw new Error(workerData.message || 'Funding transaction failed');
+        }
+
+        await logAuditAction(jobId, 'JOB_FUNDED', `Escrow funded on-chain. TX: ${workerData.txHash}`);
+        loadJobs();
+        alert('Job successfully funded and recorded on-chain!');
+
+      } catch (err) {
+        alert('Error funding job: ' + err.message);
+      } finally {
+        isSubmitting = false;
+        document.getElementById('loading-overlay').classList.add('hidden');
+      }
+    };
+
+    window.requestCompletion = async (jobId) => {
+      await db.collection('jobs').doc(jobId).update({
+        status: 'completion_requested',
+        completionRequestedBy: currentUser.uid,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await logAuditAction(jobId, 'COMPLETION_REQUESTED', 'Completion requested');
+      loadJobs();
+    };
+
+    window.approveComplete = async (jobId) => {
+      if (!confirm('Approve completion and release funds? This will execute the final settlement on Base Sepolia.')) return;
+
+      isSubmitting = true;
+      document.getElementById('loading-overlay').classList.remove('hidden');
+
+      try {
+        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerRes = await fetch(workerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'completeJob',
+            jobId: jobId
+          })
+        });
+
+        const workerData = await workerRes.json();
+        if (!workerRes.ok || !workerData.success) {
+          throw new Error(workerData.message || 'Completion transaction failed');
+        }
+
+        await logAuditAction(jobId, 'FUNDS_RELEASED', `Completion approved and funds released on-chain. TX: ${workerData.txHash}`);
+        loadJobs();
+        alert('Funds released successfully on-chain!');
+
+      } catch (err) {
+        alert('Error releasing funds: ' + err.message);
+      } finally {
+        isSubmitting = false;
+        document.getElementById('loading-overlay').classList.add('hidden');
+      }
+    };
+
+    window.voidJob = async (jobId) => {
+      if (!confirm('Are you sure you want to void this proposed contract?')) return;
+
+      isSubmitting = true;
+      document.getElementById('loading-overlay').classList.remove('hidden');
+
+      try {
+        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerRes = await fetch(workerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'voidJob',
+            jobId: jobId
+          })
+        });
+
+        const workerData = await workerRes.json();
+        if (!workerRes.ok || !workerData.success) {
+          throw new Error(workerData.message || 'Void transaction failed');
+        }
+
+        await logAuditAction(jobId, 'CONTRACT_VOIDED', `Contract voided on-chain. TX: ${workerData.txHash}`);
+        loadJobs();
+        alert('Contract voided on-chain successfully!');
+
+      } catch (err) {
+        alert('Error voiding contract: ' + err.message);
+      } finally {
+        isSubmitting = false;
+        document.getElementById('loading-overlay').classList.add('hidden');
+      }
+    };
+
+    window.requestVoid = async (jobId) => {
+      if (!confirm('Are you sure you want to request to void this contract?')) return;
+      const docSnap = await db.collection('jobs').doc(jobId).get();
+      const currentStatus = docSnap.data().status;
+
+      await db.collection('jobs').doc(jobId).update({
+        status: 'void_requested',
+        voidRequestedBy: currentUser.uid,
+        priorStatus: currentStatus,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await logAuditAction(jobId, 'VOID_REQUESTED', 'Void requested');
+      loadJobs();
+    };
+
+    window.cancelVoidRequest = async (jobId) => {
+      const docSnap = await db.collection('jobs').doc(jobId).get();
+      const priorStatus = docSnap.data().priorStatus || 'funded';
+
+      await db.collection('jobs').doc(jobId).update({
+        status: priorStatus,
+        voidRequestedBy: firebase.firestore.FieldValue.delete(),
+        priorStatus: firebase.firestore.FieldValue.delete(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await logAuditAction(jobId, 'VOID_CANCELLED', 'Void request cancelled (Un-voided)');
+      loadJobs();
+    };
+
+    window.approveVoid = async (jobId) => {
+      if (!confirm('Are you sure you want to approve voiding this contract?')) return;
+
+      isSubmitting = true;
+      document.getElementById('loading-overlay').classList.remove('hidden');
+
+      try {
+        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerRes = await fetch(workerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'voidJob',
+            jobId: jobId
+          })
+        });
+
+        const workerData = await workerRes.json();
+        if (!workerRes.ok || !workerData.success) {
+          throw new Error(workerData.message || 'Void approval transaction failed');
+        }
+
+        await logAuditAction(jobId, 'VOID_APPROVED', `Void approved and contract terminated on-chain. TX: ${workerData.txHash}`);
+        loadJobs();
+        alert('Void approved and contract terminated on-chain!');
+
+      } catch (err) {
+        alert('Error approving void: ' + err.message);
+      } finally {
+        isSubmitting = false;
+        document.getElementById('loading-overlay').classList.add('hidden');
+      }
+    };
+
+    window.raiseDispute = (jobId) => {
+      activeDisputeJobId = jobId;
+      document.getElementById('dispute-reason-input').value = '';
+      document.getElementById('dispute-files').value = '';
+      document.getElementById('dispute-modal').classList.remove('hidden');
+    };
+
+    window.closeDisputeModal = () => {
+      activeDisputeJobId = null;
+      document.getElementById('dispute-modal').classList.add('hidden');
+    };
+
+    window.submitDispute = async () => {
+      const reason = document.getElementById('dispute-reason-input').value.trim();
+      const fileInput = document.getElementById('dispute-files');
+      const files = fileInput.files;
+
+      if (!reason) {
+        alert('Please enter a description for the dispute.');
+        return;
+      }
+
+      if (!activeDisputeJobId) return;
+
+      const jobId = activeDisputeJobId;
+      closeDisputeModal();
+
+      isSubmitting = true;
+      document.getElementById('loading-overlay').classList.remove('hidden');
+
+      const uploadedRefs = [];
+      const attachmentUrls = [];
+
+      try {
+        // 1. Upload files to Storage first
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const storageRef = storage.ref(`disputes/${jobId}/${Date.now()}_${file.name}`);
+          uploadedRefs.push(storageRef);
+          const snapshot = await storageRef.put(file);
+          const downloadUrl = await snapshot.ref.getDownloadURL();
+          attachmentUrls.push({
+            name: file.name,
+            url: downloadUrl,
+            contentType: file.type
+          });
+        }
+
+        // 2. Trigger Cloudflare Worker to execute raiseDispute on-chain
+        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerRes = await fetch(workerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'raiseDispute',
+            jobId: jobId,
+            reason: reason
+          })
+        });
+
+        const workerData = await workerRes.json();
+        if (!workerRes.ok || !workerData.success) {
+          throw new Error(workerData.message || 'On-chain dispute failed');
+        }
+
+        // 3. Update Firestore with dispute details and attachments
+        await db.collection('jobs').doc(jobId).update({
+          status: 'disputed',
+          disputeReason: reason,
+          disputedBy: currentUser.uid,
+          disputeAttachments: attachmentUrls,
+          txHashDispute: workerData.txHash,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const detailMsg = attachmentUrls.length > 0 
+          ? `Dispute reason: ${reason} (${attachmentUrls.length} file(s) attached)`
+          : `Dispute reason: ${reason}`;
+
+        await logAuditAction(jobId, 'DISPUTE_RAISED', `${detailMsg}. TX: ${workerData.txHash}`);
+        loadJobs();
+        alert('Dispute raised and recorded on-chain successfully!');
+      } catch (err) {
+        console.error('Error raising dispute, rolling back uploaded files...', err);
+        for (const ref of uploadedRefs) {
+          try {
+            await ref.delete();
+          } catch (delErr) {
+            console.error('Failed to clean up storage file during rollback:', delErr);
+          }
+        }
+        alert('Error raising dispute: ' + err.message + '\n\nTransaction aborted. Please try again.');
+      } finally {
+        isSubmitting = false;
+        document.getElementById('loading-overlay').classList.add('hidden');
+      }
+    };
+  </script>
+</body>
+</html>
