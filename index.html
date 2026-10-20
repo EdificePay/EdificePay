@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edifice Pay – Safe Construction Payments</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-blue-500 selection:text-white">
+
+  <!-- Top Navigation / Brand Header -->
+  <header class="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-xl shadow-md shadow-blue-900/50">
+        H
+      </div>
+      <div>
+        <span class="text-xl font-semibold tracking-tight text-white">Edifice Pay</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Split-Screen Container -->
+  <main class="w-full max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center flex-grow">
+    
+    <!-- Left Column: Marketing & Value Proposition -->
+    <div class="lg:col-span-7 space-y-8">
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.1]">
+        Safe construction payments.
+      </h1>
+      
+      <p class="text-lg text-slate-300 leading-relaxed max-w-2xl">
+        We lock project funds safely in dedicated accounts, and release them automatically to contractors as work gets verified.
+      </p>
+
+      <!-- Precise Trust Pillars Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+        <div class="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60">
+          <div class="font-semibold text-white text-sm mb-1">US Regulated Banking</div>
+          <p class="text-xs text-slate-400 leading-normal">100% hosted, compliant, and settled within the United States.</p>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60">
+          <div class="font-semibold text-white text-sm mb-1">Zero Fees</div>
+          <p class="text-xs text-slate-400 leading-normal">100% free for all parties involved.</p>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60">
+          <div class="font-semibold text-white text-sm mb-1">Expert Arbitration</div>
+          <p class="text-xs text-slate-400 leading-normal">On-standby construction veterans for dispute resolution.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Authentication Card (Exact Original Form Logic & IDs) -->
+    <div class="lg:col-span-5">
+      <div class="w-full bg-white text-slate-900 rounded-2xl shadow-2xl p-8 border border-slate-200">
+        <div class="text-center mb-6">
+          <h2 class="text-xl font-bold text-slate-900">Access Portal</h2>
+          <p class="text-xs text-slate-500 mt-1">Sign in or create a secure account</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex mb-6 border-b border-slate-200">
+          <button id="tab-signin" class="flex-1 pb-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 transition">
+            Sign In
+          </button>
+          <button id="tab-signup" class="flex-1 pb-2 text-sm font-medium text-slate-400 hover:text-slate-600 transition">
+            Create Account
+          </button>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="signin-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email</label>
+            <input type="email" id="signin-email" required placeholder="name@company.com"
+                   class="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
+            <input type="password" id="signin-password" required placeholder="••••••••"
+                   class="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+          </div>
+          <button type="submit"
+                  class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold text-sm hover:bg-blue-700 shadow-md shadow-blue-600/20 transition">
+            Sign In to Dashboard
+          </button>
+        </form>
+
+        <!-- Sign Up Form (hidden by default) -->
+        <form id="signup-form" class="space-y-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Full Name</label>
+            <input type="text" id="signup-name" required placeholder="John Doe"
+                   class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email</label>
+            <input type="email" id="signup-email" required placeholder="name@company.com"
+                   class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
+            <input type="password" id="signup-password" required minlength="6" placeholder="Min. 6 characters"
+                   class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">I am a...</label>
+            <select id="signup-role" required
+                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none bg-white transition">
+              <option value="">Select role</option>
+              <option value="client">Client / Property Owner</option>
+              <option value="contractor">Contractor / Tradesperson</option>
+            </select>
+          </div>
+          <button type="submit"
+                  class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold text-sm hover:bg-blue-700 shadow-md shadow-blue-600/20 transition">
+            Create Secure Account
+          </button>
+        </form>
+
+        <p id="auth-error" class="mt-4 text-xs font-medium text-red-600 bg-red-50 p-3 rounded-lg border border-red-200 hidden"></p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Interactive Project Lifecycle Flowchart Section -->
+  <section class="w-full max-w-7xl mx-auto px-6 py-16 border-t border-slate-800">
+    <div class="text-center max-w-3xl mx-auto mb-12 space-y-3">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Project Lifecycle & Flow</h2>
+    </div>
+
+    <!-- Flowchart Grid Container -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left: Interactive Flowchart States -->
+      <div class="lg:col-span-5 flex flex-col space-y-3">
+        
+        <!-- State 1 Button -->
+        <button onclick="showLifecycleStep(1)" id="step-btn-1" class="flow-step-btn text-left p-4 rounded-xl border border-blue-500 bg-blue-500/10 transition flex items-center justify-between group">
+          <div class="flex items-center space-x-3">
+            <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-xs">01</span>
+            <div>
+              <span class="block text-sm font-semibold text-white">Setup & Funding</span>
+              <span class="block text-[11px] text-slate-400">Initial capital deposit & account lock</span>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-blue-400 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+
+        <!-- Connecting Arrow Indicator -->
+        <div class="flex justify-center my-[-4px] text-slate-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+        </div>
+
+        <!-- State 2 Button -->
+        <button onclick="showLifecycleStep(2)" id="step-btn-2" class="flow-step-btn text-left p-4 rounded-xl border border-slate-700 bg-slate-800/40 hover:border-slate-500 transition flex items-center justify-between group">
+          <div class="flex items-center space-x-3">
+            <span class="w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-bold flex items-center justify-center text-xs">02</span>
+            <div>
+              <span class="block text-sm font-semibold text-white">Milestone Execution</span>
+              <span class="block text-[11px] text-slate-400">Progressive completion & reviews</span>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-500 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+
+        <!-- Connecting Arrow Indicator -->
+        <div class="flex justify-center my-[-4px] text-slate-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+        </div>
+
+        <!-- State 3 Button -->
+        <button onclick="showLifecycleStep(3)" id="step-btn-3" class="flow-step-btn text-left p-4 rounded-xl border border-slate-700 bg-slate-800/40 hover:border-slate-500 transition flex items-center justify-between group">
+          <div class="flex items-center space-x-3">
+            <span class="w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-bold flex items-center justify-center text-xs">03</span>
+            <div>
+              <span class="block text-sm font-semibold text-white">Automated Payouts</span>
+              <span class="block text-[11px] text-slate-400">Instant zero-fee banking release</span>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-500 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+
+        <!-- Connecting Arrow Indicator -->
+        <div class="flex justify-center my-[-4px] text-slate-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+        </div>
+
+        <!-- State 4 Button -->
+        <button onclick="showLifecycleStep(4)" id="step-btn-4" class="flow-step-btn text-left p-4 rounded-xl border border-slate-700 bg-slate-800/40 hover:border-slate-500 transition flex items-center justify-between group">
+          <div class="flex items-center space-x-3">
+            <span class="w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-bold flex items-center justify-center text-xs">04</span>
+            <div>
+              <span class="block text-sm font-semibold text-white">Expert Arbitration</span>
+              <span class="block text-[11px] text-slate-400">Rapid conflict resolution</span>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-500 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+
+      </div>
+
+      <!-- Right: Detailed Explanation Inspector Panel -->
+      <div class="lg:col-span-7 bg-slate-800/50 border border-slate-700/80 rounded-2xl p-8 flex flex-col justify-between min-h-[320px]">
+        
+        <!-- Content Container -->
+        <div id="inspector-content" class="space-y-4">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+            <span>Phase I State Overview</span>
+          </div>
+          <h3 id="inspector-title" class="text-2xl font-bold text-white tracking-tight">Setup & Funding</h3>
+          <p id="inspector-desc" class="text-sm text-slate-300 leading-relaxed">
+            The property owner (buyer) deposits project capital into a dedicated virtual account hosted via our regulated US banking partner. Funds are locked securely out of reach of both parties, eliminating the risk of contractor ghosting while guaranteeing proof of funds upfront.
+          </p>
+          <div class="pt-2 border-t border-slate-700/60 flex items-center gap-2 text-xs text-emerald-400 font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+            <span id="inspector-badge">Guaranteed capital security & zero operational custody by platform</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Compliance & Legal Footer -->
+  <footer class="w-full max-w-7xl mx-auto px-6 py-6 border-t border-slate-800 text-xs text-slate-500 leading-relaxed text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-4">
+    <div>
+      <p class="font-medium text-slate-400">Edifice Pay is a financial technology software provider, not a bank or escrow services provider.</p>
+      <p class="mt-0.5">Banking services, virtual account creation, and money transmission are powered by regulated financial partners, including Bridge (a Stripe company).</p>
+    </div>
+    <div class="text-slate-600 text-nowrap">
+      &copy; 2026 Edifice Pay LLC. All rights reserved.
+    </div>
+  </footer>
+
+  <!-- Interactive Flowchart Inspector Script & Original Logic -->
+  <script>
+    // Lifecycle Flow State Data
+    const lifecycleData = {
+      1: {
+        phase: "Phase I State Overview",
+        title: "Setup & Funding",
+        desc: "The property owner (buyer) deposits project capital into a dedicated virtual account hosted via our regulated US banking partner. Funds are locked securely out of reach of both parties, eliminating the risk of contractor ghosting while guaranteeing proof of funds upfront.",
+        badge: "Guaranteed capital security & zero operational custody by platform",
+      },
+      2: {
+        phase: "Phase II State Overview",
+        title: "Milestone Execution",
+        desc: "As work advances through scheduled stages (e.g. framing, rough-in, electrical), completed tasks are submitted for client inspection. Contractors maintain complete peace of mind knowing funds are already sitting safely in the dedicated account.",
+        badge: "Zero contractor risk & progressive milestone verification",
+      },
+      3: {
+        phase: "Phase III State Overview",
+        title: "Automated Payouts",
+        desc: "Once a milestone is verified and signed off, funds disburse instantly to the contractor via automated US banking rails. The platform takes zero fees from either user, providing full capital transfer efficiency.",
+        badge: "Instant zero-fee transfer via automated rails",
+      },
+      4: {
+        phase: "Resolution State Overview",
+        title: "Expert Arbitration",
+        desc: "In the rare event of a disagreement, our veteran construction experts review site data, photos, and project logs. They resolve blocks in days rather than months of costly legal litigation.",
+        badge: "Decades of construction expertise & rapid mediation",
+      }
+    };
+
+    function showLifecycleStep(stepNum) {
+      // Update active button styling across all steps
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`step-btn-${i}`);
+        const badgeSpan = btn.querySelector('span:first-child');
+        if (i === stepNum) {
+          btn.className = "flow-step-btn text-left p-4 rounded-xl border border-blue-500 bg-blue-500/10 transition flex items-center justify-between group";
+          badgeSpan.className = "w-7 h-7 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-xs";
+        } else {
+          btn.className = "flow-step-btn text-left p-4 rounded-xl border border-slate-700 bg-slate-800/40 hover:border-slate-500 transition flex items-center justify-between group";
+          badgeSpan.className = "w-7 h-7 rounded-lg bg-slate-700 text-slate-300 font-bold flex items-center justify-center text-xs";
+        }
+      }
+
+      // Update inspector panel content
+      const data = lifecycleData[stepNum];
+      document.getElementById('inspector-content').querySelector('span').textContent = data.phase;
+      document.getElementById('inspector-title').textContent = data.title;
+      document.getElementById('inspector-desc').textContent = data.desc;
+      document.getElementById('inspector-badge').textContent = data.badge;
+      document.getElementById('inspector-status').textContent = data.status;
+    }
+
+    // Original Firebase Configuration & Authentication Logic
+    const firebaseConfig = {
+      apiKey: "AIzaSyChaJ8V0RulhBVu7EYZq9Kh6mswAIADADw",
+      authDomain: "dolaz-9e25e.firebaseapp.com",
+      projectId: "dolaz-9e25e",
+      storageBucket: "dolaz-9e25e.firebasestorage.app",
+      messagingSenderId: "213063237801",
+      appId: "1:213063237801:web:10134ff68f17229362a9b8",
+      measurementId: "G-7L1PVN74KP"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const tabSignin = document.getElementById('tab-signin');
+    const tabSignup = document.getElementById('tab-signup');
+    const signinForm = document.getElementById('signin-form');
+    const signupForm = document.getElementById('signup-form');
+    const errorEl = document.getElementById('auth-error');
+
+    tabSignin.addEventListener('click', () => {
+      tabSignin.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'font-semibold');
+      tabSignin.classList.remove('text-slate-400', 'font-medium');
+      tabSignup.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'font-semibold');
+      tabSignup.classList.add('text-slate-400', 'font-medium');
+      signinForm.classList.remove('hidden');
+      signupForm.classList.add('hidden');
+      errorEl.classList.add('hidden');
+    });
+
+    tabSignup.addEventListener('click', () => {
+      tabSignup.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'font-semibold');
+      tabSignup.classList.remove('text-slate-400', 'font-medium');
+      tabSignin.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'font-semibold');
+      tabSignin.classList.add('text-slate-400', 'font-medium');
+      signupForm.classList.remove('hidden');
+      signinForm.classList.add('hidden');
+      errorEl.classList.add('hidden');
+    });
+
+    signinForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.classList.add('hidden');
+      const email = document.getElementById('signin-email').value;
+      const password = document.getElementById('signin-password').value;
+
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        window.location.href = 'app.html';
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.remove('hidden');
+      }
+    });
+
+    // Helper to generate 5-char alphanumeric code (excluding ambiguous chars)
+    function generateUserCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let result = '';
+      for (let i = 0; i < 5; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.classList.add('hidden');
+    
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      const role = document.getElementById('signup-role').value;
+    
+      if (!role) {
+        errorEl.textContent = 'Please select whether you are a Client or Contractor.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+    
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+    
+        // Generate a guaranteed unique 5-char code
+        let code = '';
+        let exists = true;
+        while (exists) {
+          code = generateUserCode();
+          const check = await db.collection('users').where('code', '==', code).get();
+          if (check.empty) exists = false;
+        }
+    
+        await db.collection('users').doc(user.uid).set({
+          name,
+          email,
+          role,
+          code,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    
+        window.location.href = 'app.html';
+    
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
