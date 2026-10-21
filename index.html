@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Edifice Pay – Safe Construction Payments</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase SDKs required for the auth card included below -->
+  <!-- Firebase SDKs required for the auth card loaded dynamically -->
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
@@ -54,9 +54,9 @@
       </div>
     </div>
 
-    <!-- Right Column: Authentication Card Component -->
-    <div class="lg:col-span-5">
-      {% include auth-card.html %}
+    <!-- Right Column: Authentication Card Slot (with min-height to prevent layout jump) -->
+    <div class="lg:col-span-5 min-h-[550px]">
+      <div id="auth-container"></div>
     </div>
 
   </main>
@@ -172,8 +172,28 @@
     </div>
   </footer>
 
-  <!-- Interactive Flowchart Inspector Script -->
+  <!-- Component Loader & Interactive Flowchart Script -->
   <script>
+    // Load auth-card.html dynamically into the page
+    document.addEventListener("DOMContentLoaded", () => {
+      fetch('auth-card.html')
+        .then(response => response.text())
+        .then(html => {
+          const container = document.getElementById('auth-container');
+          container.innerHTML = html;
+
+          // Execute any scripts embedded in the loaded HTML template
+          const scripts = container.querySelectorAll('script');
+          scripts.forEach(script => {
+            const newScript = document.createElement('script');
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+        })
+        .catch(err => console.error("Error loading auth card:", err));
+    });
+
+    // Lifecycle Flow State Data
     const lifecycleData = {
       1: {
         phase: "Phase I State Overview",
