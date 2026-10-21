@@ -79,7 +79,6 @@
     measurementId: "G-7L1PVN74KP"
   };
 
-  // Prevent multiple initializations if already initialized
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
   }
@@ -127,7 +126,6 @@
     }
   });
 
-  // Helper to generate 5-char alphanumeric code (excluding ambiguous chars)
   function generateUserCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let result = '';
