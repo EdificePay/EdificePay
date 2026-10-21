@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Edifice Pay – Safe Construction Payments</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDKs required for the auth card included below -->
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
@@ -53,76 +54,9 @@
       </div>
     </div>
 
-    <!-- Right Column: Authentication Card (Exact Original Form Logic & IDs) -->
+    <!-- Right Column: Authentication Card Component -->
     <div class="lg:col-span-5">
-      <div class="w-full bg-white text-slate-900 rounded-2xl shadow-2xl p-8 border border-slate-200">
-        <div class="text-center mb-6">
-          <h2 class="text-xl font-bold text-slate-900">Access Portal</h2>
-          <p class="text-xs text-slate-500 mt-1">Sign in or create a secure account</p>
-        </div>
-
-        <!-- Tabs -->
-        <div class="flex mb-6 border-b border-slate-200">
-          <button id="tab-signin" class="flex-1 pb-2 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 transition">
-            Sign In
-          </button>
-          <button id="tab-signup" class="flex-1 pb-2 text-sm font-medium text-slate-400 hover:text-slate-600 transition">
-            Create Account
-          </button>
-        </div>
-
-        <!-- Sign In Form -->
-        <form id="signin-form" class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email</label>
-            <input type="email" id="signin-email" required placeholder="name@company.com"
-                   class="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
-            <input type="password" id="signin-password" required placeholder="••••••••"
-                   class="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
-          </div>
-          <button type="submit"
-                  class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold text-sm hover:bg-blue-700 shadow-md shadow-blue-600/20 transition">
-            Sign In to Dashboard
-          </button>
-        </form>
-
-        <!-- Sign Up Form (hidden by default) -->
-        <form id="signup-form" class="space-y-4 hidden">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Full Name</label>
-            <input type="text" id="signup-name" required placeholder="John Doe"
-                   class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email</label>
-            <input type="email" id="signup-email" required placeholder="name@company.com"
-                   class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
-            <input type="password" id="signup-password" required minlength="6" placeholder="Min. 6 characters"
-                   class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">I am a...</label>
-            <select id="signup-role" required
-                    class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none bg-white transition">
-              <option value="">Select role</option>
-              <option value="client">Client / Property Owner</option>
-              <option value="contractor">Contractor / Tradesperson</option>
-            </select>
-          </div>
-          <button type="submit"
-                  class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold text-sm hover:bg-blue-700 shadow-md shadow-blue-600/20 transition">
-            Create Secure Account
-          </button>
-        </form>
-
-        <p id="auth-error" class="mt-4 text-xs font-medium text-red-600 bg-red-50 p-3 rounded-lg border border-red-200 hidden"></p>
-      </div>
+      {% include auth-card.html %}
     </div>
 
   </main>
@@ -238,9 +172,8 @@
     </div>
   </footer>
 
-  <!-- Interactive Flowchart Inspector Script & Original Logic -->
+  <!-- Interactive Flowchart Inspector Script -->
   <script>
-    // Lifecycle Flow State Data
     const lifecycleData = {
       1: {
         phase: "Phase I State Overview",
@@ -269,7 +202,6 @@
     };
 
     function showLifecycleStep(stepNum) {
-      // Update active button styling across all steps
       for (let i = 1; i <= 4; i++) {
         const btn = document.getElementById(`step-btn-${i}`);
         const badgeSpan = btn.querySelector('span:first-child');
@@ -282,124 +214,12 @@
         }
       }
 
-      // Update inspector panel content
       const data = lifecycleData[stepNum];
       document.getElementById('inspector-content').querySelector('span').textContent = data.phase;
       document.getElementById('inspector-title').textContent = data.title;
       document.getElementById('inspector-desc').textContent = data.desc;
       document.getElementById('inspector-badge').textContent = data.badge;
-      document.getElementById('inspector-status').textContent = data.status;
     }
-
-    // Original Firebase Configuration & Authentication Logic
-    const firebaseConfig = {
-      apiKey: "AIzaSyChaJ8V0RulhBVu7EYZq9Kh6mswAIADADw",
-      authDomain: "dolaz-9e25e.firebaseapp.com",
-      projectId: "dolaz-9e25e",
-      storageBucket: "dolaz-9e25e.firebasestorage.app",
-      messagingSenderId: "213063237801",
-      appId: "1:213063237801:web:10134ff68f17229362a9b8",
-      measurementId: "G-7L1PVN74KP"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    const tabSignin = document.getElementById('tab-signin');
-    const tabSignup = document.getElementById('tab-signup');
-    const signinForm = document.getElementById('signin-form');
-    const signupForm = document.getElementById('signup-form');
-    const errorEl = document.getElementById('auth-error');
-
-    tabSignin.addEventListener('click', () => {
-      tabSignin.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'font-semibold');
-      tabSignin.classList.remove('text-slate-400', 'font-medium');
-      tabSignup.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'font-semibold');
-      tabSignup.classList.add('text-slate-400', 'font-medium');
-      signinForm.classList.remove('hidden');
-      signupForm.classList.add('hidden');
-      errorEl.classList.add('hidden');
-    });
-
-    tabSignup.addEventListener('click', () => {
-      tabSignup.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'font-semibold');
-      tabSignup.classList.remove('text-slate-400', 'font-medium');
-      tabSignin.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'font-semibold');
-      tabSignin.classList.add('text-slate-400', 'font-medium');
-      signupForm.classList.remove('hidden');
-      signinForm.classList.add('hidden');
-      errorEl.classList.add('hidden');
-    });
-
-    signinForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorEl.classList.add('hidden');
-      const email = document.getElementById('signin-email').value;
-      const password = document.getElementById('signin-password').value;
-
-      try {
-        await auth.signInWithEmailAndPassword(email, password);
-        window.location.href = 'app.html';
-      } catch (err) {
-        errorEl.textContent = err.message;
-        errorEl.classList.remove('hidden');
-      }
-    });
-
-    // Helper to generate 5-char alphanumeric code (excluding ambiguous chars)
-    function generateUserCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let result = '';
-      for (let i = 0; i < 5; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    }
-
-    signupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorEl.classList.add('hidden');
-    
-      const name = document.getElementById('signup-name').value.trim();
-      const email = document.getElementById('signup-email').value.trim();
-      const password = document.getElementById('signup-password').value;
-      const role = document.getElementById('signup-role').value;
-    
-      if (!role) {
-        errorEl.textContent = 'Please select whether you are a Client or Contractor.';
-        errorEl.classList.remove('hidden');
-        return;
-      }
-    
-      try {
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-    
-        // Generate a guaranteed unique 5-char code
-        let code = '';
-        let exists = true;
-        while (exists) {
-          code = generateUserCode();
-          const check = await db.collection('users').where('code', '==', code).get();
-          if (check.empty) exists = false;
-        }
-    
-        await db.collection('users').doc(user.uid).set({
-          name,
-          email,
-          role,
-          code,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    
-        window.location.href = 'app.html';
-    
-      } catch (err) {
-        errorEl.textContent = err.message;
-        errorEl.classList.remove('hidden');
-      }
-    });
   </script>
 </body>
 </html>
