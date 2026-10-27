@@ -240,6 +240,38 @@
         updatedData.ssnLast4 = document.getElementById('input-ssn4').value.trim();
       }
 
+      // Check if any field actually changed bit-for-bit
+      const hasChanges = 
+        updatedData.name !== (currentUserData.name || '') ||
+        updatedData.email !== (currentUserData.email || currentUser.email) ||
+        updatedData.address !== (currentUserData.address || '') ||
+        (isBusiness && (
+          updatedData.businessName !== (currentUserData.businessName || '') ||
+          updatedData.businessStructure !== (currentUserData.businessStructure || '') ||
+          updatedData.ein !== (currentUserData.ein || '') ||
+          updatedData.contractorLicense !== (currentUserData.contractorLicense || null)
+        )) ||
+        (!isBusiness && (
+          updatedData.dob !== (currentUserData.dob || '') ||
+          updatedData.ssnLast4 !== (currentUserData.ssnLast4 || '')
+        ));
+
+      if (!hasChanges) {
+        isEditing = false;
+        renderAccountDetails(currentUserData, currentUser.email, false);
+        showFeedback('No changes were made.', 'success');
+        return;
+      }
+
+      // Confirmation Alert Popup before proceeding
+      const confirmed = confirm('Warning: Modifying your account information means you will need to complete KYC verification again, and your account may be frozen for a couple of days as a result. Do you want to proceed?');
+      if (!confirmed) {
+        return;
+      }
+
+      // If changes occurred, reset KYC status to "no"
+      updatedData.KYCcomplete = "no";
+
       try {
         // Update Firestore
         await db.collection('users').doc(currentUser.uid).update(updatedData);
@@ -253,7 +285,7 @@
         currentUserData = { ...currentUserData, ...updatedData };
         isEditing = false;
         renderAccountDetails(currentUserData, currentUser.email, false);
-        showFeedback('Account information successfully updated!', 'success');
+        showFeedback('Account information updated successfully. KYC status reset to pending review.', 'success');
 
       } catch (err) {
         console.error('Error updating account:', err);
