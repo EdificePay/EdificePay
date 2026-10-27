@@ -156,6 +156,24 @@
       html += createFieldItem('Street Address', data.address || '', editMode, 'text', 'input-address');
       html += createFieldItem('Account Type', isBusiness ? 'Business Entity' : 'Individual / Person', false);
 
+      // Need Email Confirmation (Toggle item)
+      const needEmailVal = (data.NeedEmailConfirmation || 'no').toLowerCase();
+      if (editMode) {
+        html += `
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 border-b border-slate-100 last:border-none">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Need Email Confirmation</span>
+            <button type="button" id="toggle-need-email-btn" data-value="${needEmailVal}" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition ${needEmailVal === 'yes' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'}">
+              ${needEmailVal === 'yes' ? 'Yes' : 'No'}
+            </button>
+          </div>
+        `;
+      } else {
+        const needEmailDisplay = needEmailVal === 'yes'
+          ? '<span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">Yes</span>'
+          : '<span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">No</span>';
+        html += createFieldItem('Need Email Confirmation', needEmailDisplay, false);
+      }
+
       // Conditional fields
       if (isBusiness) {
         html += createFieldItem('Legal Business Name', data.businessName || '', editMode, 'text', 'input-business-name');
@@ -183,6 +201,24 @@
       }
 
       container.innerHTML = html;
+
+      // Attach toggle listener if in edit mode
+      if (editMode) {
+        const toggleBtn = document.getElementById('toggle-need-email-btn');
+        if (toggleBtn) {
+          toggleBtn.addEventListener('click', () => {
+            const currentVal = toggleBtn.getAttribute('data-value');
+            const newVal = currentVal === 'yes' ? 'no' : 'yes';
+            toggleBtn.setAttribute('data-value', newVal);
+            toggleBtn.textContent = newVal === 'yes' ? 'Yes' : 'No';
+            if (newVal === 'yes') {
+              toggleBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition bg-blue-600 text-white';
+            } else {
+              toggleBtn.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition bg-slate-200 text-slate-700';
+            }
+          });
+        }
+      }
     }
 
     function createFieldItem(label, value, editable = false, type = 'text', id = '', maxlength = '') {
@@ -229,6 +265,7 @@
       updatedData.name = document.getElementById('input-name').value.trim();
       updatedData.email = document.getElementById('input-email').value.trim();
       updatedData.address = document.getElementById('input-address').value.trim();
+      updatedData.NeedEmailConfirmation = document.getElementById('toggle-need-email-btn')?.getAttribute('data-value') || (currentUserData.NeedEmailConfirmation || 'no');
 
       if (isBusiness) {
         updatedData.businessName = document.getElementById('input-business-name').value.trim();
@@ -245,6 +282,7 @@
         updatedData.name !== (currentUserData.name || '') ||
         updatedData.email !== (currentUserData.email || currentUser.email) ||
         updatedData.address !== (currentUserData.address || '') ||
+        updatedData.NeedEmailConfirmation !== (currentUserData.NeedEmailConfirmation || 'no') ||
         (isBusiness && (
           updatedData.businessName !== (currentUserData.businessName || '') ||
           updatedData.businessStructure !== (currentUserData.businessStructure || '') ||
