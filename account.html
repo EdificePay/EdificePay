@@ -61,6 +61,17 @@
           </button>
         </div>
       </form>
+
+      <!-- Test Email Button Section -->
+      <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-800">Test Email Integration</h3>
+          <p class="text-xs text-slate-500">Send a test "hello world" email via Resend & Cloudflare Workers.</p>
+        </div>
+        <button type="button" id="send-test-email-btn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition border border-slate-200">
+          Send Test Email
+        </button>
+      </div>
     </div>
   </main>
 
@@ -105,6 +116,9 @@
     let currentUser = null;
     let currentUserData = null;
     let isEditing = false;
+
+    // Replace with your actual deployed Cloudflare Worker URL
+    const WORKER_URL = 'https://your-worker-subdomain.workers.dev';
 
     // ========== AUTH GUARD & PROFILE LOADER ==========
     auth.onAuthStateChanged(async (user) => {
@@ -268,7 +282,6 @@
       const needEmail = (currentUserData.NeedEmailConfirmation || 'no').toLowerCase();
 
       if (needEmail === 'yes') {
-        // Generate 6-digit OTP & 10-min expiry timestamp
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = Date.now() + 10 * 60 * 1000;
 
@@ -280,20 +293,63 @@
           currentUserData.otpCode = otp;
           currentUserData.otpExpires = expiresAt;
 
-          // Simulated email dispatch notification (shows code for ease of testing)
-          alert(`[SIMULATED EMAIL SENT] Your One-Time Password (OTP) is: ${otp}`);
+          // Dispatch actual email via Cloudflare Worker
+          await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: currentUserData.email || currentUser.email,
+              subject: 'Your Security Verification Code',
+              message: `Your One-Time Password (OTP) to modify account settings is: <strong>${otp}</strong>`
+            })
+          });
 
           // Show OTP modal
           document.getElementById('otp-input').value = '';
           document.getElementById('otp-error').classList.add('hidden');
           document.getElementById('otp-modal').classList.remove('hidden');
         } catch (err) {
-          showFeedback('Failed to initiate email confirmation: ' + err.message, 'error');
+          showFeedback('Failed to send confirmation email: ' + err.message, 'error');
         }
       } else {
-        // Direct access if NeedEmailConfirmation is 'no'
         isEditing = true;
         renderAccountDetails(currentUserData, currentUser.email, true);
+      }
+    });
+
+    // Test Email Button Handler
+    document.getElementById('send-test-email-btn').addEventListener('click', async () => {
+      hideFeedback();
+      const targetEmail = currentUserData?.email || currentUser?.email;
+      if (!targetEmail) {
+        showFeedback('Recipient email not found.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('send-test-email-btn');
+      btn.textContent = 'Sending...';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: targetEmail,
+            subject: 'Test Email from Contractor Escrow',
+            message: 'hello world'
+          })
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to send test email');
+
+        showFeedback(`Test email successfully sent to ${targetEmail}!`, 'success');
+      } catch (err) {
+        showFeedback('Error sending test email: ' + err.message, 'error');
+      } finally {
+        btn.textContent = 'Send Test Email';
+        btn.disabled = false;
       }
     });
 
@@ -321,7 +377,6 @@
         return;
       }
 
-      // OTP verified successfully - close modal and open form editing
       document.getElementById('otp-modal').classList.add('hidden');
       isEditing = true;
       renderAccountDetails(currentUserData, currentUser.email, true);
@@ -360,7 +415,6 @@
         updatedData.ssnLast4 = document.getElementById('input-ssn4').value.trim();
       }
 
-      // Check if any field actually changed bit-for-bit
       const hasChanges = 
         updatedData.name !== (currentUserData.name || '') ||
         updatedData.email !== (currentUserData.email || currentUser.email) ||
@@ -384,25 +438,20 @@
         return;
       }
 
-      // Confirmation Alert Popup before proceeding
       const confirmed = confirm('Warning: Modifying your account information means you will need to complete KYC verification again, and your account may be frozen for a couple of days as a result. Do you want to proceed?');
       if (!confirmed) {
         return;
       }
 
-      // If changes occurred, reset KYC status to "no"
       updatedData.KYCcomplete = "no";
 
       try {
-        // Update Firestore
         await db.collection('users').doc(currentUser.uid).update(updatedData);
 
-        // If email was changed, update Firebase Auth email as well
         if (updatedData.email !== currentUser.email) {
           await currentUser.updateEmail(updatedData.email);
         }
 
-        // Refresh local cache and UI
         currentUserData = { ...currentUserData, ...updatedData };
         isEditing = false;
         renderAccountDetails(currentUserData, currentUser.email, false);
