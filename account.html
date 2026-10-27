@@ -106,7 +106,14 @@
       const container = document.getElementById('account-details');
       let html = '';
 
+      // Format KYC Status Display
+      const kycStatus = (data.KYCcomplete || 'no').toLowerCase();
+      const kycDisplay = kycStatus === 'yes' || kycStatus === 'complete' 
+        ? '<span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Complete (Verified)</span>'
+        : '<span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">Pending Review</span>';
+
       // Common fields
+      html += createFieldItem('KYC Status', kycDisplay);
       html += createFieldItem('Email Address', data.email || authEmail);
       html += createFieldItem('Street Address', data.address || 'Not provided');
       html += createFieldItem('Account Type', isBusiness ? 'Business Entity' : 'Individual / Person');
