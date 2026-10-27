@@ -36,13 +36,31 @@
           <h2 id="user-display-name" class="text-xl font-bold text-slate-900">Loading profile...</h2>
           <p id="user-display-code" class="text-xs text-slate-400 font-mono mt-0.5"></p>
         </div>
-        <span id="account-type-badge" class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"></span>
+        <div class="flex items-center gap-3">
+          <span id="account-type-badge" class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"></span>
+          <button id="edit-toggle-btn" class="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition shadow-sm">
+            Modify Information
+          </button>
+        </div>
       </div>
 
-      <!-- Account Details List -->
-      <div id="account-details" class="space-y-4">
-        <p class="text-sm text-slate-500">Loading account information...</p>
-      </div>
+      <!-- Error / Success Feedback -->
+      <div id="account-feedback" class="mb-4 text-xs font-medium p-3 rounded-lg border hidden"></div>
+
+      <!-- Account Details Form / Container -->
+      <form id="account-form" class="space-y-4">
+        <div id="account-details" class="space-y-4">
+          <p class="text-sm text-slate-500">Loading account information...</p>
+        </div>
+        <div id="action-buttons-container" class="hidden pt-4 border-t border-slate-100 flex justify-end gap-3">
+          <button type="button" id="cancel-edit-btn" class="px-4 py-2 bg-slate-200 text-slate-700 text-sm rounded-lg hover:bg-slate-300 font-medium transition">
+            Cancel
+          </button>
+          <button type="submit" id="validate-btn" class="px-5 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-semibold transition shadow-md shadow-blue-600/20">
+            Validate Changes
+          </button>
+        </div>
+      </form>
     </div>
   </main>
 
@@ -63,21 +81,29 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    let currentUser = null;
+    let currentUserData = null;
+    let isEditing = false;
+
     // ========== AUTH GUARD & PROFILE LOADER ==========
     auth.onAuthStateChanged(async (user) => {
       if (!user) {
         window.location.href = 'index.html';
         return;
       }
+      currentUser = user;
+      loadUserProfile();
+    });
 
+    async function loadUserProfile() {
       try {
-        const docRef = await db.collection('users').doc(user.uid).get();
+        const docRef = await db.collection('users').doc(currentUser.uid).get();
         if (!docRef.exists) {
           throw new Error('User profile data not found.');
         }
 
-        const data = docRef.data();
-        renderAccountDetails(data, user.email);
+        currentUserData = docRef.data();
+        renderAccountDetails(currentUserData, currentUser.email, false);
       } catch (err) {
         console.error('Error loading profile:', err);
         document.getElementById('account-details').innerHTML = `
@@ -86,10 +112,10 @@
           </div>
         `;
       }
-    });
+    }
 
     // ========== RENDER FUNCTION ==========
-    function renderAccountDetails(data, authEmail) {
+    function renderAccountDetails(data, authEmail, editMode = false) {
       const isBusiness = data.accountType === 'business';
 
       // Header info
@@ -102,43 +128,152 @@
         ? 'px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200'
         : 'px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200';
 
-      // Fields container
       const container = document.getElementById('account-details');
+      const actionButtons = document.getElementById('action-buttons-container');
+      const editBtn = document.getElementById('edit-toggle-btn');
+
+      if (editMode) {
+        editBtn.classList.add('hidden');
+        actionButtons.classList.remove('hidden');
+      } else {
+        editBtn.classList.remove('hidden');
+        actionButtons.classList.add('hidden');
+      }
+
       let html = '';
 
-      // Format KYC Status Display
+      // Format KYC Status Display (Non-modifiable)
       const kycStatus = (data.KYCcomplete || 'no').toLowerCase();
       const kycDisplay = kycStatus === 'yes' || kycStatus === 'complete' 
         ? '<span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Complete (Verified)</span>'
         : '<span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">Pending Review</span>';
 
+      html += createFieldItem('KYC Status', kycDisplay, false);
+
       // Common fields
-      html += createFieldItem('KYC Status', kycDisplay);
-      html += createFieldItem('Email Address', data.email || authEmail);
-      html += createFieldItem('Street Address', data.address || 'Not provided');
-      html += createFieldItem('Account Type', isBusiness ? 'Business Entity' : 'Individual / Person');
+      html += createFieldItem('Full Name', data.name || '', editMode, 'text', 'input-name');
+      html += createFieldItem('Email Address', data.email || authEmail, editMode, 'email', 'input-email');
+      html += createFieldItem('Street Address', data.address || '', editMode, 'text', 'input-address');
+      html += createFieldItem('Account Type', isBusiness ? 'Business Entity' : 'Individual / Person', false);
 
       // Conditional fields
       if (isBusiness) {
-        html += createFieldItem('Legal Business Name', data.businessName || 'Not provided');
-        html += createFieldItem('Business Structure', data.businessStructure || 'Not provided');
-        html += createFieldItem('Employer Identification Number (EIN)', data.ein || 'Not provided');
-        html += createFieldItem('State Contractor License Number', data.contractorLicense || 'None provided');
+        html += createFieldItem('Legal Business Name', data.businessName || '', editMode, 'text', 'input-business-name');
+        
+        if (editMode) {
+          const structures = ['LLC', 'S-Corp', 'C-Corp', 'Sole Proprietorship', 'Partnership', 'Other'];
+          let structOptions = structures.map(s => `<option value="${s}" ${data.businessStructure === s ? 'selected' : ''}>${s}</option>`).join('');
+          html += `
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 border-b border-slate-100 last:border-none">
+              <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Business Structure</span>
+              <select id="input-business-structure" class="w-full sm:w-1/2 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none bg-white">
+                ${structOptions}
+              </select>
+            </div>
+          `;
+        } else {
+          html += createFieldItem('Business Structure', data.businessStructure || 'Not provided', false);
+        }
+
+        html += createFieldItem('Employer Identification Number (EIN)', data.ein || '', editMode, 'text', 'input-ein');
+        html += createFieldItem('State Contractor License Number', data.contractorLicense || '', editMode, 'text', 'input-license');
       } else {
-        html += createFieldItem('Date of Birth', data.dob || 'Not provided');
-        html += createFieldItem('SSN (Last 4 Digits)', data.ssnLast4 ? `•••• ${data.ssnLast4}` : 'Not provided');
+        html += createFieldItem('Date of Birth', data.dob || '', editMode, 'date', 'input-dob');
+        html += createFieldItem('SSN (Last 4 Digits)', data.ssnLast4 || '', editMode, 'password', 'input-ssn4', '4');
       }
 
       container.innerHTML = html;
     }
 
-    function createFieldItem(label, value) {
+    function createFieldItem(label, value, editable = false, type = 'text', id = '', maxlength = '') {
+      if (!editable) {
+        return `
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 border-b border-slate-100 last:border-none">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">${label}</span>
+            <span class="text-sm font-medium text-slate-900 mt-0.5 sm:mt-0">${value}</span>
+          </div>
+        `;
+      }
+
+      const maxAttr = maxlength ? `maxlength="${maxlength}"` : '';
       return `
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 border-b border-slate-100 last:border-none">
           <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">${label}</span>
-          <span class="text-sm font-medium text-slate-900 mt-0.5 sm:mt-0">${value}</span>
+          <input type="${type}" id="${id}" value="${value || ''}" ${maxAttr}
+                 class="w-full sm:w-1/2 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
         </div>
       `;
+    }
+
+    // ========== EDIT TOGGLE BUTTONS ==========
+    document.getElementById('edit-toggle-btn').addEventListener('click', () => {
+      isEditing = true;
+      hideFeedback();
+      renderAccountDetails(currentUserData, currentUser.email, true);
+    });
+
+    document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+      isEditing = false;
+      hideFeedback();
+      renderAccountDetails(currentUserData, currentUser.email, false);
+    });
+
+    // ========== FORM SUBMISSION (VALIDATE CHANGES) ==========
+    document.getElementById('account-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideFeedback();
+
+      const updatedData = {};
+      const isBusiness = currentUserData.accountType === 'business';
+
+      updatedData.name = document.getElementById('input-name').value.trim();
+      updatedData.email = document.getElementById('input-email').value.trim();
+      updatedData.address = document.getElementById('input-address').value.trim();
+
+      if (isBusiness) {
+        updatedData.businessName = document.getElementById('input-business-name').value.trim();
+        updatedData.businessStructure = document.getElementById('input-business-structure').value;
+        updatedData.ein = document.getElementById('input-ein').value.trim();
+        updatedData.contractorLicense = document.getElementById('input-license').value.trim() || null;
+      } else {
+        updatedData.dob = document.getElementById('input-dob').value;
+        updatedData.ssnLast4 = document.getElementById('input-ssn4').value.trim();
+      }
+
+      try {
+        // Update Firestore
+        await db.collection('users').doc(currentUser.uid).update(updatedData);
+
+        // If email was changed, update Firebase Auth email as well
+        if (updatedData.email !== currentUser.email) {
+          await currentUser.updateEmail(updatedData.email);
+        }
+
+        // Refresh local cache and UI
+        currentUserData = { ...currentUserData, ...updatedData };
+        isEditing = false;
+        renderAccountDetails(currentUserData, currentUser.email, false);
+        showFeedback('Account information successfully updated!', 'success');
+
+      } catch (err) {
+        console.error('Error updating account:', err);
+        showFeedback('Failed to update information: ' + err.message, 'error');
+      }
+    });
+
+    function showFeedback(message, type) {
+      const feedbackEl = document.getElementById('account-feedback');
+      feedbackEl.textContent = message;
+      feedbackEl.classList.remove('hidden');
+      if (type === 'success') {
+        feedbackEl.className = 'mb-4 text-xs font-medium p-3 rounded-lg border bg-emerald-50 text-emerald-700 border-emerald-200';
+      } else {
+        feedbackEl.className = 'mb-4 text-xs font-medium p-3 rounded-lg border bg-red-50 text-red-700 border-red-200';
+      }
+    }
+
+    function hideFeedback() {
+      document.getElementById('account-feedback').classList.add('hidden');
     }
 
     // ========== LOGOUT ==========
