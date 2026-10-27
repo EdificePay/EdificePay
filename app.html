@@ -19,10 +19,16 @@
         <h1 class="text-xl font-bold text-gray-900">Contractor Escrow</h1>
         <p id="user-info" class="text-sm text-gray-500"></p>
       </div>
-      <button id="logout-btn"
-              class="text-sm text-red-600 hover:text-red-800 font-medium">
-        Sign Out
-      </button>
+      <div class="flex items-center gap-4">
+        <button id="account-btn"
+                class="text-sm text-gray-600 hover:text-gray-900 font-medium transition">
+          Account Settings
+        </button>
+        <button id="logout-btn"
+                class="text-sm text-red-600 hover:text-red-800 font-medium transition">
+          Sign Out
+        </button>
+      </div>
     </div>
   </header>
 
@@ -174,13 +180,17 @@
       userProfile = doc.data();
 
       document.getElementById('user-info').textContent =
-        `${userProfile.name} (${userProfile.role}) · ID: ${userProfile.code}`;
+        `${userProfile.name} (${userProfile.role || userProfile.accountType || 'user'}) · ID: ${userProfile.code}`;
 
       document.getElementById('create-job-section').classList.remove('hidden');
       loadJobs();
     });
 
-    // ========== LOGOUT ==========
+    // ========== NAVIGATION & LOGOUT ==========
+    document.getElementById('account-btn').addEventListener('click', () => {
+      window.location.href = 'account.html';
+    });
+
     document.getElementById('logout-btn').addEventListener('click', () => {
       auth.signOut().then(() => {
         window.location.href = 'index.html';
@@ -224,7 +234,7 @@
           details: details,
           userId: currentUser.uid,
           userName: userProfile.name,
-          userRole: userProfile.role,
+          userRole: userProfile.role || userProfile.accountType || 'user',
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
       } catch (err) {
@@ -232,7 +242,7 @@
       }
     }
 
-// ========== CREATE JOB WITH RECIPIENT LOOKUP & ON-CHAIN PROPOSAL ==========
+    // ========== CREATE JOB WITH RECIPIENT LOOKUP & ON-CHAIN PROPOSAL ==========
     document.getElementById('create-job-form').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -492,7 +502,6 @@
     }
 
     function renderActionButtons(job, jobId) {
-      const role = userProfile.role;
       const isParticipant = (job.clientId === currentUser.uid || job.contractorId === currentUser.uid);
       if (!isParticipant) return `<span class="text-sm text-gray-400">No actions available</span>`;
 
