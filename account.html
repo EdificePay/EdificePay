@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contractor Escrow – Account Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white border-b">
+    <div class="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-xl font-bold text-gray-900">Contractor Escrow</h1>
+        <p class="text-xs text-gray-500">Account Settings</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="app.html" class="text-sm text-blue-600 hover:text-blue-800 font-medium transition">
+          ← Back to Dashboard
+        </a>
+        <button id="logout-btn" class="text-sm text-red-600 hover:text-red-800 font-medium transition">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+      <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
+        <div>
+          <h2 id="user-display-name" class="text-xl font-bold text-slate-900">Loading profile...</h2>
+          <p id="user-display-code" class="text-xs text-slate-400 font-mono mt-0.5"></p>
+        </div>
+        <span id="account-type-badge" class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"></span>
+      </div>
+
+      <!-- Account Details List -->
+      <div id="account-details" class="space-y-4">
+        <p class="text-sm text-slate-500">Loading account information...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Firebase Configuration & Account Logic Script -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyChaJ8V0RulhBVu7EYZq9Kh6mswAIADADw",
+      authDomain: "dolaz-9e25e.firebaseapp.com",
+      projectId: "dolaz-9e25e",
+      storageBucket: "dolaz-9e25e.firebasestorage.app",
+      messagingSenderId: "213063237801",
+      appId: "1:213063237801:web:10134ff68f17229362a9b8"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ========== AUTH GUARD & PROFILE LOADER ==========
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      try {
+        const docRef = await db.collection('users').doc(user.uid).get();
+        if (!docRef.exists) {
+          throw new Error('User profile data not found.');
+        }
+
+        const data = docRef.data();
+        renderAccountDetails(data, user.email);
+      } catch (err) {
+        console.error('Error loading profile:', err);
+        document.getElementById('account-details').innerHTML = `
+          <div class="bg-red-50 text-red-700 p-4 rounded-lg text-sm">
+            Failed to load account details: ${err.message}
+          </div>
+        `;
+      }
+    });
+
+    // ========== RENDER FUNCTION ==========
+    function renderAccountDetails(data, authEmail) {
+      const isBusiness = data.accountType === 'business';
+
+      // Header info
+      document.getElementById('user-display-name').textContent = data.name || 'Unnamed User';
+      document.getElementById('user-display-code').textContent = `Unique ID: ${data.code || 'N/A'}`;
+
+      const badge = document.getElementById('account-type-badge');
+      badge.textContent = isBusiness ? 'Business Entity' : 'Individual / Person';
+      badge.className = isBusiness 
+        ? 'px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200'
+        : 'px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200';
+
+      // Fields container
+      const container = document.getElementById('account-details');
+      let html = '';
+
+      // Common fields
+      html += createFieldItem('Email Address', data.email || authEmail);
+      html += createFieldItem('Street Address', data.address || 'Not provided');
+      html += createFieldItem('Account Type', isBusiness ? 'Business Entity' : 'Individual / Person');
+
+      // Conditional fields
+      if (isBusiness) {
+        html += createFieldItem('Legal Business Name', data.businessName || 'Not provided');
+        html += createFieldItem('Business Structure', data.businessStructure || 'Not provided');
+        html += createFieldItem('Employer Identification Number (EIN)', data.ein || 'Not provided');
+        html += createFieldItem('State Contractor License Number', data.contractorLicense || 'None provided');
+      } else {
+        html += createFieldItem('Date of Birth', data.dob || 'Not provided');
+        html += createFieldItem('SSN (Last 4 Digits)', data.ssnLast4 ? `•••• ${data.ssnLast4}` : 'Not provided');
+      }
+
+      container.innerHTML = html;
+    }
+
+    function createFieldItem(label, value) {
+      return `
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 border-b border-slate-100 last:border-none">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">${label}</span>
+          <span class="text-sm font-medium text-slate-900 mt-0.5 sm:mt-0">${value}</span>
+        </div>
+      `;
+    }
+
+    // ========== LOGOUT ==========
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      auth.signOut().then(() => {
+        window.location.href = 'index.html';
+      });
+    });
+  </script>
+</body>
+</html>
