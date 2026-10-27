@@ -50,44 +50,123 @@
     </div>
 
     <!-- Conditional Business Fields (Hidden by Default) -->
-    <div id="business-fields" class="space-y-4 hidden pt-1">
+    <div id="business-fields" class="space-y-4 hidden pt-1 border-t border-slate-100 mt-3">
       <div>
-        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Legal Business Name</label>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1 mt-3">Legal Business Name</label>
         <input type="text" id="signup-business-name" placeholder="Acme Construction LLC"
                class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Legal Business Structure</label>
+        <select id="signup-business-structure"
+                class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none bg-white transition">
+          <option value="">Select structure</option>
+          <option value="LLC">LLC</option>
+          <option value="S-Corp">S-Corp</option>
+          <option value="C-Corp">C-Corp</option>
+          <option value="Sole Proprietorship">Sole Proprietorship</option>
+          <option value="Partnership">Partnership</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
       <div>
         <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Employer Identification Number (EIN)</label>
         <input type="text" id="signup-ein" placeholder="12-3456789"
                class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
       </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">State Contractor License Number <span class="text-slate-400 font-normal">(Optional)</span></label>
+        <input type="text" id="signup-license" placeholder="e.g., HIC-123456"
+               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+      </div>
     </div>
 
+    <!-- Name Field -->
     <div>
       <label id="name-label" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Full Name</label>
       <input type="text" id="signup-name" required placeholder="John Doe"
              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
     </div>
+
+    <!-- Address (Required for Both) -->
     <div>
-      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email</label>
-      <input type="email" id="signup-email" required placeholder="name@company.com"
+      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Street Address</label>
+      <input type="text" id="signup-address" required placeholder="123 Main St, Suite 400, City, State, ZIP"
              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
     </div>
-    <div>
-      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
-      <input type="password" id="signup-password" required minlength="6" placeholder="Min. 6 characters"
-             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+
+    <!-- Individual Specific Fields (DOB & Last 4 SSN) -->
+    <div id="individual-fields" class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Date of Birth</label>
+        <input type="date" id="signup-dob" required
+               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition bg-white" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">SSN (Last 4 Digits)</label>
+        <input type="password" id="signup-ssn4" required maxlength="4" placeholder="••••"
+               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+      </div>
     </div>
-    <div>
-      <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">I am a...</label>
-      <select id="signup-role" required
-              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none bg-white transition">
-        <option value="">Select role</option>
-        <option value="client">Client / Property Owner</option>
-        <option value="contractor">Contractor / Tradesperson</option>
-      </select>
+
+    <!-- Email Address (Dual Entry) -->
+    <div class="space-y-3">
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email Address</label>
+        <input type="email" id="signup-email" required placeholder="name@company.com"
+               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Confirm Email Address</label>
+        <input type="email" id="signup-email-confirm" required placeholder="name@company.com"
+               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+        <p id="email-match-status" class="text-[11px] font-medium mt-1 hidden"></p>
+      </div>
     </div>
-    <button type="submit"
+
+    <!-- Password (Dual Entry with Toggle & Live Strength Check) -->
+    <div class="space-y-3">
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
+        <div class="relative">
+          <input type="password" id="signup-password" required placeholder="Min. 6 characters"
+                 class="w-full px-3 py-2 pr-10 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+          <button type="button" id="toggle-password" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-semibold">
+            Show
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Confirm Password</label>
+        <div class="relative">
+          <input type="password" id="signup-password-confirm" required placeholder="Re-enter password"
+                 class="w-full px-3 py-2 pr-10 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition" />
+          <button type="button" id="toggle-password-confirm" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-semibold">
+            Show
+          </button>
+        </div>
+        <p id="password-match-status" class="text-[11px] font-medium mt-1 hidden"></p>
+      </div>
+
+      <!-- Live Password Requirements Checklist -->
+      <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs space-y-1">
+        <p class="font-semibold text-slate-700 mb-1">Password must contain:</p>
+        <p id="req-length" class="text-slate-400 flex items-center gap-1.5 transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-300 inline-block"></span> At least 6 characters
+        </p>
+        <p id="req-letter" class="text-slate-400 flex items-center gap-1.5 transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-300 inline-block"></span> At least one letter
+        </p>
+        <p id="req-number" class="text-slate-400 flex items-center gap-1.5 transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-300 inline-block"></span> At least one number
+        </p>
+        <p id="req-special" class="text-slate-400 flex items-center gap-1.5 transition-colors">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-300 inline-block"></span> At least one special character
+        </p>
+      </div>
+    </div>
+
+    <button type="submit" id="signup-submit-btn"
             class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold text-sm hover:bg-blue-700 shadow-md shadow-blue-600/20 transition">
       Create Secure Account
     </button>
@@ -124,9 +203,14 @@
   const btnIndividual = document.getElementById('type-individual');
   const btnBusiness = document.getElementById('type-business');
   const businessFields = document.getElementById('business-fields');
+  const individualFields = document.getElementById('individual-fields');
   const nameLabel = document.getElementById('name-label');
+  
   const businessNameInput = document.getElementById('signup-business-name');
+  const businessStructureInput = document.getElementById('signup-business-structure');
   const einInput = document.getElementById('signup-ein');
+  const dobInput = document.getElementById('signup-dob');
+  const ssnInput = document.getElementById('signup-ssn4');
 
   let accountType = 'individual';
 
@@ -135,9 +219,14 @@
     btnIndividual.className = "py-2 text-xs font-semibold rounded-md bg-white text-blue-600 shadow-sm transition";
     btnBusiness.className = "py-2 text-xs font-medium rounded-md text-slate-600 hover:text-slate-900 transition";
     businessFields.classList.add('hidden');
+    individualFields.classList.remove('hidden');
     nameLabel.textContent = "Full Name";
+    
     businessNameInput.removeAttribute('required');
+    businessStructureInput.removeAttribute('required');
     einInput.removeAttribute('required');
+    dobInput.setAttribute('required', 'true');
+    ssnInput.setAttribute('required', 'true');
   });
 
   btnBusiness.addEventListener('click', () => {
@@ -145,9 +234,14 @@
     btnBusiness.className = "py-2 text-xs font-semibold rounded-md bg-white text-blue-600 shadow-sm transition";
     btnIndividual.className = "py-2 text-xs font-medium rounded-md text-slate-600 hover:text-slate-900 transition";
     businessFields.classList.remove('hidden');
+    individualFields.classList.add('hidden');
     nameLabel.textContent = "Authorized Representative Name";
+    
     businessNameInput.setAttribute('required', 'true');
+    businessStructureInput.setAttribute('required', 'true');
     einInput.setAttribute('required', 'true');
+    dobInput.removeAttribute('required');
+    ssnInput.removeAttribute('required');
   });
 
   tabSignin.addEventListener('click', () => {
@@ -169,6 +263,96 @@
     signinForm.classList.add('hidden');
     errorEl.classList.add('hidden');
   });
+
+  // Password Visibility Toggles
+  const togglePassword = document.getElementById('toggle-password');
+  const passwordInput = document.getElementById('signup-password');
+  togglePassword.addEventListener('click', () => {
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    togglePassword.textContent = type === 'password' ? 'Show' : 'Hide';
+  });
+
+  const togglePasswordConfirm = document.getElementById('toggle-password-confirm');
+  const passwordConfirmInput = document.getElementById('signup-password-confirm');
+  togglePasswordConfirm.addEventListener('click', () => {
+    const type = passwordConfirmInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordConfirmInput.setAttribute('type', type);
+    togglePasswordConfirm.textContent = type === 'password' ? 'Show' : 'Hide';
+  });
+
+  // Live Email Match Validation
+  const emailInput = document.getElementById('signup-email');
+  const emailConfirmInput = document.getElementById('signup-email-confirm');
+  const emailMatchStatus = document.getElementById('email-match-status');
+
+  function checkEmailMatch() {
+    if (!emailConfirmInput.value) {
+      emailMatchStatus.classList.add('hidden');
+      return;
+    }
+    emailMatchStatus.classList.remove('hidden');
+    if (emailInput.value === emailConfirmInput.value) {
+      emailMatchStatus.textContent = "✓ Emails match";
+      emailMatchStatus.className = "text-[11px] font-semibold mt-1 text-emerald-600";
+    } else {
+      emailMatchStatus.textContent = "✕ Emails do not match";
+      emailMatchStatus.className = "text-[11px] font-semibold mt-1 text-red-600";
+    }
+  }
+  emailInput.addEventListener('input', checkEmailMatch);
+  emailConfirmInput.addEventListener('input', checkEmailMatch);
+
+  // Live Password Strength & Match Validation
+  const reqLength = document.getElementById('req-length');
+  const reqLetter = document.getElementById('req-letter');
+  const reqNumber = document.getElementById('req-number');
+  const reqSpecial = document.getElementById('req-special');
+  const passwordMatchStatus = document.getElementById('password-match-status');
+
+  function updateRequirement(el, valid) {
+    const dot = el.querySelector('span');
+    if (valid) {
+      el.className = "text-emerald-600 flex items-center gap-1.5 transition-colors font-medium";
+      dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block";
+    } else {
+      el.className = "text-slate-400 flex items-center gap-1.5 transition-colors";
+      dot.className = "w-1.5 h-1.5 rounded-full bg-slate-300 inline-block";
+    }
+  }
+
+  function checkPassword() {
+    const val = passwordInput.value;
+    const hasLength = val.length >= 6;
+    const hasLetter = /[a-zA-Z]/.test(val);
+    const hasNumber = /[0-9]/.test(val);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(val);
+
+    updateRequirement(reqLength, hasLength);
+    updateRequirement(reqLetter, hasLetter);
+    updateRequirement(reqNumber, hasNumber);
+    updateRequirement(reqSpecial, hasSpecial);
+
+    checkPasswordMatch();
+  }
+
+  function checkPasswordMatch() {
+    if (!passwordConfirmInput.value) {
+      passwordMatchStatus.classList.add('hidden');
+      return;
+    }
+    passwordMatchStatus.classList.remove('hidden');
+    if (passwordInput.value === passwordConfirmInput.value) {
+      passwordMatchStatus.textContent = "✓ Passwords match";
+      passwordMatchStatus.className = "text-[11px] font-semibold mt-1 text-emerald-600";
+    } else {
+      passwordMatchStatus.textContent = "✕ Passwords do not match";
+      passwordMatchStatus.className = "text-[11px] font-semibold mt-1 text-red-600";
+    }
+  }
+
+  passwordInput.addEventListener('input', checkPassword);
+  passwordConfirmInput.addEventListener('input', checkPasswordMatch);
 
   signinForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -198,17 +382,54 @@
     e.preventDefault();
     errorEl.classList.add('hidden');
   
-    const name = document.getElementById('signup-name').value.trim();
-    const email = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value;
-    const role = document.getElementById('signup-role').value;
-    const businessName = accountType === 'business' ? document.getElementById('signup-business-name').value.trim() : null;
-    const ein = accountType === 'business' ? document.getElementById('signup-ein').value.trim() : null;
-  
-    if (!role) {
-      errorEl.textContent = 'Please select whether you are a Client or Contractor.';
+    const email = emailInput.value.trim();
+    const emailConfirm = emailConfirmInput.value.trim();
+    const password = passwordInput.value;
+    const passwordConfirm = passwordConfirmInput.value;
+
+    // Final Validation Guards
+    if (email !== emailConfirm) {
+      errorEl.textContent = 'Email addresses do not match.';
       errorEl.classList.remove('hidden');
       return;
+    }
+
+    if (password !== passwordConfirm) {
+      errorEl.textContent = 'Passwords do not match.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    const hasLength = password.length >= 6;
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+
+    if (!hasLength || !hasLetter || !hasNumber || !hasSpecial) {
+      errorEl.textContent = 'Password does not meet all complexity requirements.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    const name = document.getElementById('signup-name').value.trim();
+    const address = document.getElementById('signup-address').value.trim();
+  
+    const userData = {
+      name,
+      email,
+      address,
+      accountType,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (accountType === 'business') {
+      userData.businessName = businessNameInput.value.trim();
+      userData.businessStructure = businessStructureInput.value;
+      userData.ein = einInput.value.trim();
+      userData.contractorLicense = document.getElementById('signup-license').value.trim() || null;
+    } else {
+      userData.dob = dobInput.value;
+      userData.ssnLast4 = ssnInput.value.trim();
     }
   
     try {
@@ -222,21 +443,9 @@
         const check = await db.collection('users').where('code', '==', code).get();
         if (check.empty) exists = false;
       }
+
+      userData.code = code;
   
-      const userData = {
-        name,
-        email,
-        role,
-        accountType,
-        code,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-
-      if (accountType === 'business') {
-        userData.businessName = businessName;
-        userData.ein = ein;
-      }
-
       await db.collection('users').doc(user.uid).set(userData);
   
       window.location.href = 'app.html';
