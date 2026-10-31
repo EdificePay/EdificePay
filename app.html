@@ -209,7 +209,20 @@
         const response = await fetch(workerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'proposeJob' }) // or appropriate payload
+          body: JSON.stringify({
+            action: 'proposeJob',
+            jobId: "0x" + Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join(''),
+            amount: 45,
+            currency: "USD",
+            description: "Test tree cutting service",
+            clientCode: "A4F9X",
+            contractorCode: "B7K2M",
+            clientId: "test-client-id",
+            clientName: "Bob",
+            contractorId: "test-contractor-id",
+            contractorName: "Mike",
+            createdBy: "test-client-id"
+          })
         });
     
         const data = await response.json();
