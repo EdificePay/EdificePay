@@ -293,7 +293,7 @@
           .map(b => b.toString(16).padStart(2, '0')).join('');
 
         // Single call to Cloudflare Worker handles BOTH blockchain proposal & Firestore sync atomically
-        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerUrl = 'https://blockchain-interactions.edifice-pay-admin.workers.dev/';
         const workerRes = await fetch(workerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -698,7 +698,7 @@
       document.getElementById('loading-overlay').classList.remove('hidden');
 
       try {
-        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerUrl = 'https://blockchain-interactions.edifice-pay-admin.workers.dev/';
         const workerRes = await fetch(workerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -761,7 +761,7 @@
       document.getElementById('loading-overlay').classList.remove('hidden');
 
       try {
-        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerUrl = 'https://blockchain-interactions.edifice-pay-admin.workers.dev/';
         const workerRes = await fetch(workerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -837,7 +837,7 @@
         }
 
         // 2. Trigger Cloudflare Worker to execute raiseDispute on-chain
-        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerUrl = 'https://blockchain-interactions.edifice-pay-admin.workers.dev/';
         const workerRes = await fetch(workerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
