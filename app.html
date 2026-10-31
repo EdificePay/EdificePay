@@ -197,27 +197,28 @@
       });
     });
 
-    // ========== WORKER CONNECTION TEST ==========
+// ========== WORKER CONNECTION TEST ==========
     document.getElementById('test-worker-btn').addEventListener('click', async () => {
       const statusMsg = document.getElementById('worker-status-msg');
-      statusMsg.textContent = 'Proposing mock job (Bob & Mike - $45 tree cutting) on-chain...';
+      statusMsg.textContent = 'Testing connection to worker backend...';
       statusMsg.className = 'text-sm text-blue-600 font-medium mt-1';
     
       try {
-        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerUrl = 'https://blockchain-interactions.edifice-pay-admin.workers.dev/';
     
         const response = await fetch(workerUrl, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'ping' }) // or any basic payload
         });
     
         const data = await response.json();
         
-        if (response.ok && data.txHash) {
-          statusMsg.innerHTML = `Job Proposed On-Chain! TX: <a href="https://sepolia.basescan.org/tx/${data.txHash}" target="_blank" class="underline font-mono">${data.txHash.substring(0, 10)}...</a>`;
+        if (response.ok) {
+          statusMsg.textContent = 'Worker connection successful!';
           statusMsg.className = 'text-sm text-green-600 font-medium mt-1';
         } else {
-          statusMsg.textContent = data.message || 'Transaction error.';
+          statusMsg.textContent = data.message || 'Worker responded with an error.';
           statusMsg.className = 'text-sm text-red-600 font-medium mt-1';
         }
       } catch (err) {
@@ -619,7 +620,7 @@
       document.getElementById('loading-overlay').classList.remove('hidden');
 
       try {
-        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerUrl = 'https://blockchain-interactions.edifice-pay-admin.workers.dev/';
         const workerRes = await fetch(workerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -663,7 +664,7 @@
       document.getElementById('loading-overlay').classList.remove('hidden');
 
       try {
-        const workerUrl = 'https://dolaz.tdgb.workers.dev/';
+        const workerUrl = 'https://blockchain-interactions.edifice-pay-admin.workers.dev/';
         const workerRes = await fetch(workerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
