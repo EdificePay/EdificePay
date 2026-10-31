@@ -209,7 +209,7 @@
         const response = await fetch(workerUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'ping' }) // or any basic payload
+          body: JSON.stringify({ action: 'proposeJob' }) // or appropriate payload
         });
     
         const data = await response.json();
